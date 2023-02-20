@@ -1,6 +1,8 @@
 #include <omp.h>
 #include <iostream>
 #include <vector>
+#include <sys/time.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -12,8 +14,8 @@ int main()
     a.resize(n);
     for(int num=1; num<=20; num++){
 	    omp_set_num_threads(num);
-	    clock_t start, end;
-	    start = clock();
+	    struct timeval start, end;
+	   	gettimeofday(&start, NULL);
 	    int sum = 0,i;
 	    // Beginning of parallel region
 	    #pragma omp parallel default(shared) private(i)
@@ -28,10 +30,14 @@ int main()
 		      sum+=a[i];
 		    }
 	    }
-	    // Ending of parallel region
-	    end=clock();
-	    double time_taken = double(end-start);
+	    // Ending of parallel region   
+	   	gettimeofday(&end, NULL);
+		double time_taken=0;
+		time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+		time_taken = (time_taken + (end.tv_usec - 
+								start.tv_usec)) * 1e-6;
 	    cout<<sum<<endl;
-	    cout<<"Time: "<<time_taken<<endl;
+	    cout<<"Time: "<<fixed
+         << time_taken << setprecision(6)<<endl;
     }
 }
