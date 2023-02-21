@@ -1,5 +1,6 @@
 #include <omp.h>
 #include <bits/stdc++.h>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -10,6 +11,10 @@ struct Edge{
 		dest = d;
 		weight = w;
 	}
+};
+
+struct DistVal{
+	int val = INT_MAX;
 };
 
 struct Graph{
@@ -29,73 +34,82 @@ struct Graph{
 			cout<<i<<": "<<dist[i]<<endl;
 		}
 	}
-	void sssp(int s){
-		int i,j;
-		int dist[v];
-		#pragma omp parallel for default(shared) private(i) 
-		for(i=0;i<v;i++){
-			dist[i]=INT_MAX;
-		}
-		dist[s]=0;
+};
+
+int main(int argc, char* argv[]){
+	/*int v = 5;
+	Graph g(v);
+	int s = 0;
+	g.sssp(source);*/	
+	int v=atoi(argv[2]);
+	string str;
+	cout<<argv[1]<<endl;
+	ifstream graphfile(argv[1]);
+	Graph g(v);
+	int s = atoi(argv[3]);
+	int num;
+	map<int,DistVal> dist;
+	int i,j,odist;
+	bool change = false;
+	while (getline (graphfile, str)){
+		stringstream ss(str);
+		string word;
+		int source, destination, weight;
+		getline(ss, word, ',');
+		source = stoi(word);
+		getline(ss, word, ',');
+		destination = stoi(word);
+		getline(ss, word, ',');
+		weight = stoi(word);	
+		g.addEdge(source,destination,weight);
+	}
+	graphfile.close();
+	cout<<g.e<<endl;
+	struct timeval start, end;
+	double time_taken=0;
+	int u1,u2,w,tu1,tu2;
+	for(num=20; num>=1; num--){
+		omp_set_num_threads(num);	
+	 	gettimeofday(&start, NULL);
+		// #pragma omp parallel for default(shared) private(i) 
+		// for(i=0;i<v;i++){
+		// 	dist[i]=INT_MAX;
+		// }
+		dist[s].val=0;
 		for(i=1; i<v; i++){
-			int odist;
-			bool change = false;
-			#pragma omp parallel for default(shared) private(j, odist)  
-			for(j=0; j<e; j++){
-				int u1 = edges[j].src, u2 = edges[j].dest, w = edges[j].weight;
-				if(dist[u1]!=INT_MAX){
-					odist = dist[u2];
+			change = false;
+			#pragma omp parallel for default(shared) private(j, odist, tu1,tu2,u1,u2,w)  
+			for(j=0; j<g.e; j++){
+				u1 = g.edges[j].src;
+				u2 = g.edges[j].dest;
+				w = g.edges[j].weight;
+				if(dist[u1].val!=INT_MAX){
+					odist = dist[u2].val;
 					#pragma omp critical
-					dist[u2]=min(dist[u1]+w,dist[u2]);
-					if(odist!=dist[u2]){
+					{
+						tu1=dist[u1].val;
+						tu2=dist[u2].val;
+						if(tu1+w<tu2){
+							dist[u2].val=tu1+w;
+							// cout<<tu1<<" "<<tu2<<endl;
+						}
+					}
+					if(odist!=dist[u2].val){
 						change = true;
 					}
 				}
 			}
 			if(!change)break;
 		}
-		printDist(dist);
+		time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+		time_taken = (time_taken + (end.tv_usec - 
+								start.tv_usec)) * 1e-6;
+		// for(int i=0; i<v; i++){
+		// 	cout<<i<<": "<<dist[i]<<endl;
+		// }
+	    cout<<"Threads: "<<num<<" Time: "<<fixed
+         << time_taken << setprecision(10)<<endl;
 	}
-};
-
-int main(){
-	/*int v = 5;
-	Graph g(v);
-	int source = 0;
-	g.addEdge(0,1,-1);
-	g.addEdge(0,2,4);
-	g.addEdge(1,2,3);
-	g.addEdge(1,3,2);
-	g.addEdge(1,4,2);
-	g.addEdge(3,2,5);
-	g.addEdge(3,1,1);
-	g.addEdge(4,3,-3);
-	g.sssp(source);*/	
-	int v = 30;
-	Graph g(v);
-	int source = 0;
-	int e = rand()%435, u1, u2, w,i;
-	int num;
-	#pragma omp parallel for default(shared) private(i, u1,u2,w) 
-	for( i=0; i< e; i++){
-		u1 = rand()%v;
-		u2 = rand()%v;
-		while (u1==u2){
-			u2 = rand()%v;
-		}
-		w = (rand()%40)-20;
-		g.addEdge(u1,u2,w);
-	}
-	cout<<"Number of threads?"<<endl;
-	cin>>num;
-	omp_set_num_threads(num);
-	clock_t start, end;
-	start = clock();
-	g.sssp(source);
-	end=clock();
-	double time_taken = double(end-start);
-	cout<<"Time: "<<time_taken<<endl;
-	
 	
 
 	return 0;
