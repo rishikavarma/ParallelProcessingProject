@@ -68,7 +68,7 @@ int main(int argc, char* argv[]){
 	struct timeval start, end;
 	double time_taken=0;
 	int u1,u2,w,tu1,tu2;
-	for(num=20; num>=1; num--){
+	for(num=1; num<=20; num++){
 		omp_set_num_threads(num);	
 	 	gettimeofday(&start, NULL);
 		// #pragma omp parallel for default(shared) private(i) 
