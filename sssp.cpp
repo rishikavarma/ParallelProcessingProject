@@ -112,28 +112,36 @@ int main(int argc, char* argv[]){
 						odist = dist[u2].val;
 						#pragma omp critical
 						{
+							cout<<u1<<" "<<u2<<" thread num: "<<omp_get_thread_num()<<" "<<num;
 							tu1=dist[u1].val;
 							tu2=dist[u2].val;
 							if(tu1+w<tu2){
 								dist[u2].val=tu1+w;
-								cout<<tu1<<" "<<tu2<<" thread num: "<<omp_get_thread_num()<<endl;
+								cout<<" here";
 							}
+							cout<<" done";
 							// dist[u2].val = min(dist[u2].val,dist[u1].val+w);
 						}
 						if(odist!=dist[u2].val){
 							change = true;
 						}
+						cout<<"next_iter"<<endl;
 					}
+					cout<<"out0 "<<change<<" "<<j<<" "<<g.e<<endl;
 				}
+				cout<<"out01 "<<j<<" "<<g.e<<endl;
 				if(!change)break;
 			}
+			cout<<"out"<<endl;
 			gettimeofday(&end, NULL);
 		}
+		cout<<"out2"<<endl;
 		time_taken = (end.tv_sec - start.tv_sec) * 1e6;
 		time_taken = (time_taken + (end.tv_usec - 
 								start.tv_usec)) * 1e-6;
 		for(it = dist.begin(); it!=dist.end(); it++){
 			output1<<it->first<<": "<<it->second.val<<endl;
+			cout<<it->first<<": "<<it->second.val<<endl;
 		}						
 		for(it = dist.begin(); it!=dist.end(); it++){
 			if(dist_test[it->first].val!=it->second.val){
