@@ -11,7 +11,7 @@ int main(){
 		stringstream ss(str);
         string word;
 		int source,destination,weight;
-        weight = (rand()%2000)-100;
+        weight = (rand()%2000);
 		ss>>word;
         source = stoi(word);
 		ss>>word;

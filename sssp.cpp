@@ -37,10 +37,6 @@ struct Graph{
 };
 
 int main(int argc, char* argv[]){
-	/*int v = 5;
-	Graph g(v);
-	int s = 0;
-	g.sssp(source);*/	
 	int v=atoi(argv[2]);
 	string str;
 	cout<<argv[1]<<endl;
@@ -120,8 +116,6 @@ int main(int argc, char* argv[]){
 							// }
 							dist[u2].val = min(dist[u2].val,dist[u1].val+w);
 						}
-						// # pragma omp atomic
-						// dist[u2].val = min(dist[u2].val,dist[u1].val+w);
 						if(odist!=dist[u2].val){
 							change = true;
 						}
