@@ -44,58 +44,58 @@ struct Graph
 	}
 };
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char *argv[])
 {
-	int v = 5 /*atoi(argv[2])*/;
+	int v = atoi(argv[2]);
 	string str;
-	// cout<<argv[1]<<endl;
-	// ifstream graphfile(argv[1]);
+	cout << argv[1] << endl;
+	ifstream graphfile(argv[1]);
 	ofstream expected_output("expected_output_r.txt"), output1("output1_r.txt");
 	Graph g(v);
-	int s = 0 /*atoi(argv[3])*/;
+	int s = atoi(argv[3]);
 	int num;
-	int i, j, k, odist;
+	int i, j, k, odist, ind = 0;
 	map<int, Index> idToIndex;
-	int ind = 0;
 	map<int, Index>::iterator it;
-	bool change = false, initial = true;
-	idToIndex[0].val = 0;
-	idToIndex[1].val = 1;
-	idToIndex[2].val = 2;
-	idToIndex[3].val = 3;
-	idToIndex[4].val = 4;
-	g.addEdge(0, 1, -1);
-	g.addEdge(0, 2, 4);
-	g.addEdge(1, 2, 3);
-	g.addEdge(1, 3, 2);
-	g.addEdge(1, 4, 2);
-	g.addEdge(3, 2, 5);
-	g.addEdge(3, 1, 1);
-	g.addEdge(4, 3, -3);
-	// while (getline (graphfile, str)){
-	// 	stringstream ss(str);
-	// 	string word;
-	// 	int source, destination, weight;
-	// 	getline(ss, word, ',');
-	// 	source = stoi(word);
-	// 	getline(ss, word, ',');
-	// 	destination = stoi(word);
-	// 	getline(ss, word, ',');
-	// 	weight = stoi(word);
-	// 	g.addEdge(source,destination,weight);
-	//     if(idToIndex[source].val == -1){
-	//         idToIndex[source].val = ind;
-	//         ind++;
-	//     }
-	//     if(idToIndex[destination].val == -1){
-	//         idToIndex[destination].val = ind;
-	//         ind++;
-	//     }
-
-	// }
-	// graphfile.close();
+	bool change = false;
+	// idToIndex[0].val = 0;
+	// idToIndex[1].val = 1;
+	// idToIndex[2].val = 2;
+	// idToIndex[3].val = 3;
+	// idToIndex[4].val = 4;
+	// g.addEdge(0, 1, -1);
+	// g.addEdge(0, 2, 4);
+	// g.addEdge(1, 2, 3);
+	// g.addEdge(1, 3, 2);
+	// g.addEdge(1, 4, 2);
+	// g.addEdge(3, 2, 5);
+	// g.addEdge(3, 1, 1);
+	// g.addEdge(4, 3, -3);
+	while (getline(graphfile, str))
+	{
+		stringstream ss(str);
+		string word;
+		int source, destination, weight;
+		getline(ss, word, ',');
+		source = stoi(word);
+		getline(ss, word, ',');
+		destination = stoi(word);
+		getline(ss, word, ',');
+		weight = stoi(word);
+		g.addEdge(source, destination, weight);
+		if (idToIndex[source].val == -1)
+		{
+			idToIndex[source].val = ind;
+			ind++;
+		}
+		if (idToIndex[destination].val == -1)
+		{
+			idToIndex[destination].val = ind;
+			ind++;
+		}
+	}
+	graphfile.close();
 	cout << g.e << endl;
-	cout << ind << endl;
 	struct timeval start, end;
 	double time_taken = 0;
 	int u1, u2, w, tu1, tu2;
@@ -128,6 +128,7 @@ int main(/*int argc, char* argv[]*/)
 				{
 					change = true;
 				}
+				cout<<i<<" "<<j<<endl;
 			}
 		}
 		if (!change)
@@ -144,42 +145,40 @@ int main(/*int argc, char* argv[]*/)
 		omp_set_num_threads(num);
 		gettimeofday(&start, NULL);
 		sssp[idToIndex[s].val] = 0;
-		cout << idToIndex[s].val << " " << sssp[idToIndex[s].val] << endl;
+		int* sssp_thread = new int[num * v];
 		for (i = 1; i < v; i++)
 		{
 			change = false;
-			initial = true;
-			for (k = 0; k < v; k++)
+			// for (k = 0; k < v; k++)
+			// {
+			// 	cout << sssp[k] << " ";
+			// }
+			// cout << endl;
+#pragma omp parallel for
+			for (k = 0; k < v * num; k++)
 			{
-				cout << sssp[k] << " ";
+				sssp_thread[k] = sssp[k % v];
 			}
-			cout << endl;
-#pragma omp parallel for default(shared) private(j, k, odist, u1, u2, w, initial) reduction(min \
-																							: sssp_priv[:v])
+#pragma omp parallel for default(shared) private(j, k, odist, u1, u2, w)
 			for (j = 0; j < g.e; j++)
 			{
-				    if(initial){
-						for(k=0;k<v;k++){
-							sssp_priv[k]=sssp[k];
-						}
-						initial = false;
-					}
-				if (sssp_priv[idToIndex[s].val] == INT_MAX)
-					sssp_priv[idToIndex[s].val] = 0;
 				u1 = g.edges[j].src;
 				u2 = g.edges[j].dest;
 				w = g.edges[j].weight;
-				// cout << i << " " << v << " " << j << " " << g.e << endl;
-				if (sssp_priv[idToIndex[u1].val] != INT_MAX)
+				if (sssp_thread[omp_get_thread_num() * v + idToIndex[u1].val] != INT_MAX)
 				{
-					sssp_priv[idToIndex[u2].val] = min(sssp_priv[idToIndex[u2].val], sssp_priv[idToIndex[u1].val] + w);
+					sssp_thread[omp_get_thread_num() * v + idToIndex[u2].val] = min(sssp_thread[omp_get_thread_num() * v + idToIndex[u2].val], sssp_thread[omp_get_thread_num() * v + idToIndex[u1].val] + w);
 				}
 			}
-#pragma omp parallel for default(shared) private(k)
-			for(k=0;k<v;k++){
-				if(sssp[k]!=sssp_priv[k]){
-					sssp[k]=sssp_priv[k];
-					change=true;
+#pragma omp parallel for default(shared) private(k, j, odist)
+			for (j = 0; j < v; j++)
+			{
+				for (k = 0; k < num; k++)
+				{
+					odist = sssp[j];
+					sssp[j] = min(sssp[j], sssp_thread[k * v + j]);
+					if (sssp[j] != odist)
+						change = true;
 				}
 			}
 			if (!change)
@@ -217,6 +216,7 @@ int main(/*int argc, char* argv[]*/)
 			 << time_taken << setprecision(10) << " Iterations: " << iter << endl;
 		if (num == 16)
 			num = 10;
+		delete sssp_thread;
 	}
 	return 0;
 }
