@@ -53,7 +53,7 @@ struct Graph
       if (degree[i] >= k)
       {
         cout << i << "  :  ";
-        for (int j = 0; j < degree[i]; j++)
+        for (int j = 0; j < adj_list[i].size(); j++)
         {
           if (degree[adj_list[i][j]] >= k)
           {
@@ -73,14 +73,15 @@ void compute_k_cores_dfs(Graph &g, vector<bool> &visited, int v, int k)
   {
     int adj_v = g.adj_list[v][i];
     g.degree[adj_v]--;
-    for (int j = 0; j < g.degree[adj_v]; j++)
-    {
-      if (g.adj_list[adj_v][j] == v)
-      {
-        g.adj_list[adj_v][j] = g.adj_list[adj_v][g.degree[adj_v]];
-        break;
-      }
-    }
+    // remove edge
+    // for (int j = 0; j < g.degree[adj_v]; j++)
+    // {
+    //   if (g.adj_list[adj_v][j] == v)
+    //   {
+    //     g.adj_list[adj_v][j] = g.adj_list[adj_v][g.degree[adj_v]];
+    //     break;
+    //   }
+    // }
     // if(!visited[adj_v]) cout<<adj_v<<endl;
     if (!visited[adj_v] && g.degree[adj_v] < k)
     {
@@ -94,12 +95,24 @@ void compute_k_cores(Graph &g, int k)
   vector<bool> visited(g.v, false);
   for (int i = 0; i < g.v; i++)
   {
-    //  if(!visited[i]) cout<<i<<endl;
     if (!visited[i] && g.degree[i] < k)
     {
 
       compute_k_cores_dfs(g, visited, i, k);
     }
+  }
+  for (int i = 0; i < g.v; i++)
+  {
+    if (g.degree[i] < k)
+      continue;
+    int cnt = 0;
+    for (int j = 0; j < g.adj_list[i].size(); j++)
+    {
+      if (g.degree[g.adj_list[i][j]] >= k)
+        cnt++;
+    }
+    if (cnt < k)
+      g.degree[i] = cnt;
   }
 }
 
