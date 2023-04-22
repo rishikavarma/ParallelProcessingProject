@@ -86,9 +86,15 @@ struct Graph
   }
 };
 
-void compute_k_cores_dfs(Graph &g, vector<bool> &visited, int v, int k)
+void compute_k_cores_dfs(Graph &g, bool* &visited, int v, int k)
 {
-  visited[v] = true;
+  bool go= false;
+  #pragma omp critical
+  {
+    if(visited[v]) go=true;
+    visited[v] = true;
+  } 
+  if(go)return;
   for (int i = 0; i < g.adj_list[i].size(); i++)
   {
     int adj_v = g.adj_list[v][i];
@@ -103,8 +109,15 @@ void compute_k_cores_dfs(Graph &g, vector<bool> &visited, int v, int k)
 
 Graph *compute_k_cores(Graph &g, int k)
 {
-  vector<bool> visited(g.v, false);
-  for (int i = 0; i < g.v; i++)
+  bool *visited = new bool[g.v];
+  int i;
+  #pragma omp parallel for
+  for (int t = 0; t < g.v; t++)
+  {
+    visited[t] = false;
+  }
+#pragma omp parallel for default(shared) private(i)
+  for (i = 0; i < g.v; i++)
   {
     if (!visited[i] && g.degree[i] < k)
     {
@@ -113,7 +126,8 @@ Graph *compute_k_cores(Graph &g, int k)
     }
   }
   Graph *kCore = new Graph(g.v);
-  for (int i = 0; i < g.v; i++)
+  // #pragma omp parallel for default(shared) private(i)
+  for (i = 0; i < g.v; i++)
   {
     if (g.degree[i] >= k)
     {
