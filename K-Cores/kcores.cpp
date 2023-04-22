@@ -37,12 +37,16 @@ struct Graph
     degree.resize(v);
   }
 
-  void addEdge(int s, int d)
+  void addDirectedEdge(int s, int d)
   {
     adj_list[s].push_back(d);
-    adj_list[d].push_back(s);
     degree[s]++;
-    degree[d]++;
+  }
+
+  void addEdge(int s, int d)
+  {
+    addDirectedEdge(s, d);
+    addDirectedEdge(d, s);
     e++;
   }
 
@@ -64,60 +68,71 @@ struct Graph
       }
     }
   }
+
+  void printGraph()
+  {
+    for (int i = 0; i < v; i++)
+    {
+      if (adj_list[i].size())
+      {
+        cout << i << "  :  ";
+        for (int j = 0; j < adj_list[i].size(); j++)
+        {
+          cout << " " << adj_list[i][j] << ",";
+        }
+        cout << endl;
+      }
+    }
+  }
 };
 
 void compute_k_cores_dfs(Graph &g, vector<bool> &visited, int v, int k)
 {
   visited[v] = true;
-  for (int i = 0; i < g.degree[v]; i++)
+  for (int i = 0; i < g.adj_list[i].size(); i++)
   {
     int adj_v = g.adj_list[v][i];
     g.degree[adj_v]--;
-    // remove edge
-    // for (int j = 0; j < g.degree[adj_v]; j++)
-    // {
-    //   if (g.adj_list[adj_v][j] == v)
-    //   {
-    //     g.adj_list[adj_v][j] = g.adj_list[adj_v][g.degree[adj_v]];
-    //     break;
-    //   }
-    // }
-    // if(!visited[adj_v]) cout<<adj_v<<endl;
     if (!visited[adj_v] && g.degree[adj_v] < k)
     {
+      // cout << adj_v << endl;
       compute_k_cores_dfs(g, visited, adj_v, k);
     }
   }
 }
 
-void compute_k_cores(Graph &g, int k)
+Graph *compute_k_cores(Graph &g, int k)
 {
   vector<bool> visited(g.v, false);
   for (int i = 0; i < g.v; i++)
   {
     if (!visited[i] && g.degree[i] < k)
     {
-
+      // cout << i << endl;
       compute_k_cores_dfs(g, visited, i, k);
     }
   }
+  Graph *kCore = new Graph(g.v);
   for (int i = 0; i < g.v; i++)
   {
-    if (g.degree[i] < k)
-      continue;
-    int cnt = 0;
-    for (int j = 0; j < g.adj_list[i].size(); j++)
+    if (g.degree[i] >= k)
     {
-      if (g.degree[g.adj_list[i][j]] >= k)
-        cnt++;
+      for (int j = 0; j < g.adj_list[i].size(); j++)
+      {
+        if (g.degree[g.adj_list[i][j]] >= k)
+        {
+          kCore->addDirectedEdge(i, g.adj_list[i][j]);
+        }
+      }
     }
-    if (cnt < k)
-      g.degree[i] = cnt;
   }
+  kCore->printGraph();
+  return kCore;
 }
 
 int main(int argc, char *argv[])
 {
+  Graph *res;
   Graph g1(9);
   g1.addEdge(0, 1);
   g1.addEdge(0, 2);
@@ -136,9 +151,9 @@ int main(int argc, char *argv[])
   g1.addEdge(5, 8);
   g1.addEdge(6, 7);
   g1.addEdge(6, 8);
-  compute_k_cores(g1, 3);
   cout << "G1:" << endl;
-  g1.printKCoresGraph(3);
+  res = compute_k_cores(g1, 3);
+  free(res);
 
   Graph g2(13);
   g2.addEdge(0, 1);
@@ -153,9 +168,9 @@ int main(int argc, char *argv[])
   g2.addEdge(3, 10);
   g2.addEdge(3, 11);
   g2.addEdge(3, 12);
-  compute_k_cores(g2, 3);
   cout << "G2:" << endl;
-  g2.printKCoresGraph(3);
+  res = compute_k_cores(g2, 3);
+  free(res);
 
   Graph gr(9);
   gr.addEdge(0, 1);
@@ -173,8 +188,31 @@ int main(int argc, char *argv[])
   gr.addEdge(5, 7);
   gr.addEdge(5, 8);
   gr.addEdge(8, 7);
-  compute_k_cores(gr, 3);
   cout << "G3:" << endl;
-  gr.printKCoresGraph(3);
+  res = compute_k_cores(gr, 3);
+  free(res);
+
+  Graph g4(10);
+  g4.addEdge(0, 1);
+  g4.addEdge(0, 4);
+  g4.addEdge(0, 7);
+  g4.addEdge(2, 1);
+  g4.addEdge(4, 1);
+  g4.addEdge(6, 1);
+  g4.addEdge(2, 3);
+  g4.addEdge(2, 4);
+  g4.addEdge(3, 4);
+  g4.addEdge(3, 5);
+  g4.addEdge(3, 6);
+  g4.addEdge(5, 4);
+  g4.addEdge(5, 6);
+  g4.addEdge(5, 7);
+  g4.addEdge(5, 8);
+  g4.addEdge(6, 9);
+  g4.addEdge(7, 8);
+  g4.addEdge(8, 9);
+  cout << "G4:" << endl;
+  res = compute_k_cores(g4, 3);
+  free(res);
   return 0;
 }
