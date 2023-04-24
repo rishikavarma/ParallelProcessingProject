@@ -5,6 +5,7 @@
 
 using namespace std;
 
+ofstream output1("output1_r.txt"),output2("output2_r.txt");
 template <typename T>
 inline void atomicMin(T *targetVar, T update_val)
 {
@@ -56,15 +57,15 @@ struct Graph
     {
       if (degree[i] >= k)
       {
-        cout << i << "  :  ";
+       output2  << i << "  :  ";
         for (int j = 0; j < adj_list[i].size(); j++)
         {
           if (degree[adj_list[i][j]] >= k)
           {
-            cout << " " << adj_list[i][j] << ",";
+            output2 << " " << adj_list[i][j] << ",";
           }
         }
-        cout << endl;
+        output2 << endl;
       }
     }
   }
@@ -75,12 +76,12 @@ struct Graph
     {
       if (adj_list[i].size())
       {
-        cout << i << "  :  ";
+        output2 << i << "  :  ";
         for (int j = 0; j < adj_list[i].size(); j++)
         {
-          cout << " " << adj_list[i][j] << ",";
+          output2 << " " << adj_list[i][j] << ",";
         }
-        cout << endl;
+        output2 << endl;
       }
     }
   }
@@ -99,13 +100,13 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
     g.degree[adj_v]--;
     if (!visited[adj_v] && g.degree[adj_v] < k)
     {
-      // cout << adj_v << endl;
+      // output1 << adj_v << endl;
       compute_k_cores_dfs(g, visited, adj_v, k);
     }
   }
 }
 
-Graph *compute_k_cores(Graph &g, int k)
+Graph* compute_k_cores(Graph &g, int k)
 {
   int *visited = new int[g.v];
   int i;
@@ -114,7 +115,7 @@ Graph *compute_k_cores(Graph &g, int k)
   {
     if (!visited[i] && g.degree[i] < k)
     {
-      // cout << i << endl;
+      // output1 << i << endl;
       compute_k_cores_dfs(g, visited, i, k);
     }
   }
@@ -158,8 +159,15 @@ int main(int argc, char *argv[])
   g1.addEdge(5, 8);
   g1.addEdge(6, 7);
   g1.addEdge(6, 8);
-  cout << "G1:" << endl;
+  output2 << "G1:" << endl;
+  // output1 <<"G1:" << endl;
   res = compute_k_cores(g1, 3);
+  vector<int> ans{2,3,4,6,7}; 
+  for(int i=0;i<ans.size();i++){
+    if(res->adj_list[ans[i]].size()==0){
+      cout<<"G1 error"<<endl;
+    }
+  }
   free(res);
 
   Graph g2(13);
@@ -175,8 +183,14 @@ int main(int argc, char *argv[])
   g2.addEdge(3, 10);
   g2.addEdge(3, 11);
   g2.addEdge(3, 12);
-  cout << "G2:" << endl;
+  output2 << "G2:" << endl;
+  // output1 << "G2:" << endl;
   res = compute_k_cores(g2, 3);
+  for(int i=0;i<res->adj_list.size();i++){
+    if(res->adj_list[i].size()!=0){
+      cout<<"G2 error"<<endl;
+    }
+  }
   free(res);
 
   Graph gr(9);
@@ -195,8 +209,15 @@ int main(int argc, char *argv[])
   gr.addEdge(5, 7);
   gr.addEdge(5, 8);
   gr.addEdge(8, 7);
-  cout << "G3:" << endl;
+  output2 << "G3:" << endl;
+  // output1 << "G3:" << endl;
   res = compute_k_cores(gr, 3);
+  vector<int> ans3{2,3,4,6}; 
+  for(int i=0;i<ans3.size();i++){
+    if(res->adj_list[ans3[i]].size()==0){
+      cout<<"G3 error"<<endl;
+    }
+  }
   free(res);
 
   Graph g4(10);
@@ -218,8 +239,15 @@ int main(int argc, char *argv[])
   g4.addEdge(6, 9);
   g4.addEdge(7, 8);
   g4.addEdge(8, 9);
-  cout << "G4:" << endl;
+  output2 << "G4:" << endl;
+  // output1 << "G4:" << endl;
   res = compute_k_cores(g4, 3);
+  vector<int> ans4{1,2,3,4,5,6}; 
+  for(int i=0;i<ans4.size();i++){
+    if(res->adj_list[ans4[i]].size()==0){
+      cout<<"G4 error"<<endl;
+    }
+  }
   free(res);
   return 0;
 }
