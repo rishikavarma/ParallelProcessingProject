@@ -92,7 +92,7 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
   int doNotProceed = 0;
 #pragma omp atomic capture
   doNotProceed = visited[v]++;
-  if (visited[v] > 1)
+  if (doNotProceed > 0)
     return;
   for (int i = 0; i < g.adj_list[i].size(); i++)
   {
