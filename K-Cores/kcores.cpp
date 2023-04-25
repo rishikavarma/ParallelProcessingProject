@@ -6,18 +6,6 @@
 using namespace std;
 
 ofstream output1("output1_r.txt"),output2("output2_r.txt");
-template <typename T>
-inline void atomicMin(T *targetVar, T update_val)
-{
-  T oldVal, newVal;
-  do
-  {
-    oldVal = *targetVar;
-    newVal = std::min(oldVal, update_val);
-    if (oldVal == newVal)
-      break;
-  } while (__sync_val_compare_and_swap(targetVar, oldVal, newVal) == false);
-}
 
 struct Index
 {
@@ -120,12 +108,13 @@ Graph* compute_k_cores(Graph &g, int k)
     }
   }
   Graph *kCore = new Graph(g.v);
-  // #pragma omp parallel for default(shared) private(i)
+  int j=0;
+  #pragma omp parallel for default(shared) private(i,j)
   for (i = 0; i < g.v; i++)
   {
     if (g.degree[i] >= k)
     {
-      for (int j = 0; j < g.adj_list[i].size(); j++)
+      for (j = 0; j < g.adj_list[i].size(); j++)
       {
         if (g.degree[g.adj_list[i][j]] >= k)
         {
