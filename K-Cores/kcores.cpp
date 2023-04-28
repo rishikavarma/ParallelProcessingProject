@@ -5,7 +5,7 @@
 
 using namespace std;
 
-ofstream output1("output1_r.txt"),output2("output2_r.txt");
+ofstream output1("output1_r.txt"), output2("output2_r.txt");
 
 struct Index
 {
@@ -45,7 +45,7 @@ struct Graph
     {
       if (degree[i] >= k)
       {
-       output2  << i << "  :  ";
+        output2 << i << "  :  ";
         for (int j = 0; j < adj_list[i].size(); j++)
         {
           if (degree[adj_list[i][j]] >= k)
@@ -94,7 +94,7 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
   }
 }
 
-Graph* compute_k_cores(Graph &g, int k)
+Graph *compute_k_cores(Graph &g, int k)
 {
   int *visited = new int[g.v];
   int i;
@@ -108,8 +108,8 @@ Graph* compute_k_cores(Graph &g, int k)
     }
   }
   Graph *kCore = new Graph(g.v);
-  int j=0;
-  #pragma omp parallel for default(shared) private(i,j)
+  int j = 0;
+#pragma omp parallel for default(shared) private(i, j)
   for (i = 0; i < g.v; i++)
   {
     if (g.degree[i] >= k)
@@ -124,13 +124,72 @@ Graph* compute_k_cores(Graph &g, int k)
     }
   }
   kCore->printGraph();
+  free(visited);
   return kCore;
 }
 
-int main(int argc, char *argv[])
+void seq_compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
 {
-  Graph *res;
+  visited[v] = 1;
+  for (int i = 0; i < g.adj_list[i].size(); i++)
+  {
+    int adj_v = g.adj_list[v][i];
+    g.degree[adj_v]--;
+    if (!visited[adj_v] && g.degree[adj_v] < k)
+    {
+      // output1 << adj_v << endl;
+      compute_k_cores_dfs(g, visited, adj_v, k);
+    }
+  }
+}
+
+Graph *seq_KCores(Graph &g, int k)
+{
+  int *visited = new int[g.v];
+  int i;
+  for (i = 0; i < g.v; i++)
+  {
+    if (!visited[i] && g.degree[i] < k)
+    {
+      // output1 << i << endl;
+      seq_compute_k_cores_dfs(g, visited, i, k);
+    }
+  }
+  Graph *kCore = new Graph(g.v);
+  int j = 0;
+  for (i = 0; i < g.v; i++)
+  {
+    if (g.degree[i] >= k)
+    {
+      for (j = 0; j < g.adj_list[i].size(); j++)
+      {
+        if (g.degree[g.adj_list[i][j]] >= k)
+        {
+          kCore->addDirectedEdge(i, g.adj_list[i][j]);
+        }
+      }
+    }
+  }
+  kCore->printGraph();
+  free(visited);
+  return kCore;
+}
+
+void smallTestCase1()
+{
   Graph g1(9);
+  output2 << "G1:" << endl;
+  // output1 <<"G1:" << endl;
+  Graph *res = compute_k_cores(g1, 3);
+  vector<int> ans{2, 3, 4, 6, 7};
+  for (int i = 0; i < ans.size(); i++)
+  {
+    if (res->adj_list[ans[i]].size() == 0)
+    {
+      cout << "G1 error" << endl;
+    }
+  }
+  free(res);
   g1.addEdge(0, 1);
   g1.addEdge(0, 2);
   g1.addEdge(1, 2);
@@ -148,17 +207,10 @@ int main(int argc, char *argv[])
   g1.addEdge(5, 8);
   g1.addEdge(6, 7);
   g1.addEdge(6, 8);
-  output2 << "G1:" << endl;
-  // output1 <<"G1:" << endl;
-  res = compute_k_cores(g1, 3);
-  vector<int> ans{2,3,4,6,7}; 
-  for(int i=0;i<ans.size();i++){
-    if(res->adj_list[ans[i]].size()==0){
-      cout<<"G1 error"<<endl;
-    }
-  }
-  free(res);
+}
 
+void smallTestCase2()
+{
   Graph g2(13);
   g2.addEdge(0, 1);
   g2.addEdge(0, 2);
@@ -174,14 +226,19 @@ int main(int argc, char *argv[])
   g2.addEdge(3, 12);
   output2 << "G2:" << endl;
   // output1 << "G2:" << endl;
-  res = compute_k_cores(g2, 3);
-  for(int i=0;i<res->adj_list.size();i++){
-    if(res->adj_list[i].size()!=0){
-      cout<<"G2 error"<<endl;
+  Graph *res = compute_k_cores(g2, 3);
+  for (int i = 0; i < res->adj_list.size(); i++)
+  {
+    if (res->adj_list[i].size() != 0)
+    {
+      cout << "G2 error" << endl;
     }
   }
   free(res);
+}
 
+void smallTestCase3()
+{
   Graph gr(9);
   gr.addEdge(0, 1);
   gr.addEdge(0, 2);
@@ -200,15 +257,20 @@ int main(int argc, char *argv[])
   gr.addEdge(8, 7);
   output2 << "G3:" << endl;
   // output1 << "G3:" << endl;
-  res = compute_k_cores(gr, 3);
-  vector<int> ans3{2,3,4,6}; 
-  for(int i=0;i<ans3.size();i++){
-    if(res->adj_list[ans3[i]].size()==0){
-      cout<<"G3 error"<<endl;
+  Graph *res = compute_k_cores(gr, 3);
+  vector<int> ans3{2, 3, 4, 6};
+  for (int i = 0; i < ans3.size(); i++)
+  {
+    if (res->adj_list[ans3[i]].size() == 0)
+    {
+      cout << "G3 error" << endl;
     }
   }
   free(res);
+}
 
+void smallTestCase4()
+{
   Graph g4(10);
   g4.addEdge(0, 1);
   g4.addEdge(0, 4);
@@ -230,13 +292,88 @@ int main(int argc, char *argv[])
   g4.addEdge(8, 9);
   output2 << "G4:" << endl;
   // output1 << "G4:" << endl;
-  res = compute_k_cores(g4, 3);
-  vector<int> ans4{1,2,3,4,5,6}; 
-  for(int i=0;i<ans4.size();i++){
-    if(res->adj_list[ans4[i]].size()==0){
-      cout<<"G4 error"<<endl;
+  Graph *res = compute_k_cores(g4, 3);
+  vector<int> ans4{1, 2, 3, 4, 5, 6};
+  for (int i = 0; i < ans4.size(); i++)
+  {
+    if (res->adj_list[ans4[i]].size() == 0)
+    {
+      cout << "G4 error" << endl;
     }
   }
   free(res);
+}
+
+int main(int argc, char *argv[])
+{
+  int v = atoi(argv[2]);
+  string str;
+  cout << argv[1] << endl;
+  ifstream graphfile(argv[1]);
+  ofstream expected_output("expected_output_r.txt"), output1("output1_r.txt");
+  Graph g(v);
+  int num;
+  int i, j, ind = 0;
+  map<int, Index> idToIndex;
+  map<int, Index>::iterator it;
+  bool change = false;
+  Graph *res;
+  while (getline(graphfile, str))
+  {
+    stringstream ss(str);
+    string word;
+    int source, destination;
+    getline(ss, word, ',');
+    source = stoi(word);
+    getline(ss, word, ',');
+    destination = stoi(word);
+    if (idToIndex[source].val == -1)
+    {
+      idToIndex[source].val = ind;
+      ind++;
+    }
+    if (idToIndex[destination].val == -1)
+    {
+      idToIndex[destination].val = ind;
+      ind++;
+    }
+    g.addEdge(idToIndex[source].val, idToIndex[destination].val);
+  }
+  graphfile.close();
+  struct timeval start, end;
+  double time_taken = 0;
+  cout << g.e << endl;
+  Graph *seq_res = seq_KCores(g, 3);
+  for (num = 1; num <= 20; num = num * 2)
+  {
+    omp_set_num_threads(num);
+    gettimeofday(&start, NULL);
+    res = compute_k_cores(g, 3);
+    gettimeofday(&end, NULL);
+    bool error = false;
+#pragma omp parallel for default(shared) private(i) reduction(| \
+                                                              : error)
+    for (i = 0; i < seq_res->adj_list.size(); i++)
+    {
+      if (seq_res->adj_list[i].size() != res->adj_list[i].size())
+      {
+        error = true;
+      }
+    }
+    if (error)
+    {
+      cout << "Error! Incorrect results" << endl;
+      // break;
+    }
+    time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+    time_taken = (time_taken + (end.tv_usec -
+                                start.tv_usec)) *
+                 1e-6;
+    cout << "Threads: " << num << " Time: " << fixed
+         << time_taken << setprecision(10) << endl;
+    if (num == 16)
+      num = 10;
+    free(res);
+  }
   return 0;
 }
