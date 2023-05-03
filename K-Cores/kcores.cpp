@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
     }
     for (i = 0; i < g.adj_list[idToIndex[source].val].size(); i++)
     {
-      if (g.adj_list[idToIndex[source].val][i] == idToIndex[source].val)
+      if (g.adj_list[idToIndex[source].val][i] == idToIndex[destination].val || g.adj_list[idToIndex[source].val][i] == idToIndex[source].val)
         break;
     }
     if (i != g.adj_list[idToIndex[source].val].size())
@@ -371,6 +371,12 @@ int main(int argc, char *argv[])
     g.addEdge(idToIndex[source].val, idToIndex[destination].val);
   }
   graphfile.close();
+  ofstream comparer("compare.txt");
+
+  for(it = idToIndex.begin();it!=idToIndex.end();it++){
+    comparer<<it->first<<" : "<<it->second.val<<endl;
+  }
+
   struct timeval start, end;
   double time_taken = 0;
   cout << g.e << endl;
