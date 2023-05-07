@@ -88,8 +88,12 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
 Graph *compute_k_cores(Graph &g, int k)
 {
   int *visited = new int[g.v];
-  memset(visited, 0, sizeof *visited * g.v);
   int i;
+#pragma omp parallel for default(shared) private(i)
+  for (i = 0; i < g.v; i++)
+  {
+    visited[i] = 0;
+  }
 #pragma omp parallel for default(shared) private(i)
   for (i = 0; i < g.v; i++)
   {
@@ -375,7 +379,7 @@ int main(int argc, char *argv[])
     res = compute_k_cores(g, 3);
     gettimeofday(&end, NULL);
     bool error = false;
-    #pragma omp parallel for default(shared) private(i) reduction(| \
+#pragma omp parallel for default(shared) private(i) reduction(| \
                                                               : error)
     for (i = 0; i < seq_res->adj_list.size(); i++)
     {
