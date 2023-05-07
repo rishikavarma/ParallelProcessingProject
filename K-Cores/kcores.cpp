@@ -5,7 +5,7 @@
 
 using namespace std;
 
-ofstream output1kc("output1_kc.txt"), output2kc("output2_kc.txt"), expected_output("expected_output_kc.txt");
+ofstream output2kc("output2_kc.txt"), expected_output("expected_output_kc.txt");
 
 struct Index
 {
@@ -64,6 +64,7 @@ struct Graph
     }
   }
 };
+Graph *seq_res;
 
 void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
 {
@@ -75,10 +76,10 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
   for (int i = 0; i < g.adj_list[v].size(); i++)
   {
     int adj_v = g.adj_list[v][i];
+#pragma omp atomic
     g.degree[adj_v]--;
     if (!visited[adj_v] && g.degree[adj_v] < k)
     {
-      // output1kc << adj_v << endl;
       compute_k_cores_dfs(g, visited, adj_v, k);
     }
   }
@@ -87,6 +88,7 @@ void compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
 Graph *compute_k_cores(Graph &g, int k)
 {
   int *visited = new int[g.v];
+  memset(visited, 0, sizeof *visited * g.v);
   int i;
 #pragma omp parallel for default(shared) private(i)
   for (i = 0; i < g.v; i++)
@@ -98,7 +100,6 @@ Graph *compute_k_cores(Graph &g, int k)
   {
     if (!visited[i] && g.degree[i] < k)
     {
-      // output1kc << i << endl;
       compute_k_cores_dfs(g, visited, i, k);
     }
   }
@@ -133,7 +134,6 @@ void seq_compute_k_cores_dfs(Graph &g, int *&visited, int v, int k)
     g.degree[adj_v]--;
     if (!visited[adj_v] && g.degree[adj_v] < k)
     {
-      // output1kc << adj_v << endl;
       seq_compute_k_cores_dfs(g, visited, adj_v, k);
     }
   }
@@ -196,7 +196,6 @@ void smallTestCase1()
   g1.addEdge(6, 7);
   g1.addEdge(6, 8);
   output2kc << "G1:" << endl;
-  // output1kc <<"G1:" << endl;
   Graph *res = compute_k_cores(g1, 3);
   bool err = false;
   vector<int> ans{2, 3, 4, 6, 7};
@@ -208,8 +207,8 @@ void smallTestCase1()
       err = true;
     }
   }
-  // if (!err)
-  //   cout << "G1 successfull!" << endl;
+  if (!err)
+    cout << "G1 successfull!" << endl;
   free(res);
 }
 
@@ -229,7 +228,6 @@ void smallTestCase2()
   g2.addEdge(3, 11);
   g2.addEdge(3, 12);
   output2kc << "G2:" << endl;
-  // output1kc << "G2:" << endl;
   Graph *res = compute_k_cores(g2, 3);
   bool err = false;
   for (int i = 0; i < res->adj_list.size(); i++)
@@ -240,8 +238,8 @@ void smallTestCase2()
       err = true;
     }
   }
-  // if (!err)
-  //   cout << "G2 successfull!" << endl;
+  if (!err)
+    cout << "G2 successfull!" << endl;
   free(res);
 }
 
@@ -264,7 +262,6 @@ void smallTestCase3()
   gr.addEdge(5, 8);
   gr.addEdge(8, 7);
   output2kc << "G3:" << endl;
-  // output1kc << "G3:" << endl;
   Graph *res = compute_k_cores(gr, 3);
   bool err = false;
   vector<int> ans3{2, 3, 4, 6};
@@ -276,8 +273,8 @@ void smallTestCase3()
       err = true;
     }
   }
-  // if (!err)
-  //   cout << "G3 successfull!" << endl;
+  if (!err)
+    cout << "G3 successfull!" << endl;
   free(res);
 }
 
@@ -303,7 +300,6 @@ void smallTestCase4()
   g4.addEdge(7, 8);
   g4.addEdge(8, 9);
   output2kc << "G4:" << endl;
-  // output1kc << "G4:" << endl;
   Graph *res = compute_k_cores(g4, 3);
   vector<int> ans4{1, 2, 3, 4, 5, 6};
   bool err = false;
@@ -315,8 +311,8 @@ void smallTestCase4()
       err = true;
     }
   }
-  // if (!err)
-  //   cout << "G4 successfull!" << endl;
+  if (!err)
+    cout << "G4 successfull!" << endl;
   free(res);
 }
 
@@ -371,13 +367,7 @@ int main(int argc, char *argv[])
   struct timeval start, end;
   double time_taken = 0;
   cout << g.e << endl;
-  Graph *seq_res = seq_KCores(g, 3);
-  cout << "hello" << endl;
-  // omp_set_num_threads(8);
-  smallTestCase1();
-  smallTestCase2();
-  smallTestCase3();
-  smallTestCase4();
+  seq_res = seq_KCores(g, 3);
   for (num = 1; num <= 20; num = num * 2)
   {
     omp_set_num_threads(num);
@@ -385,13 +375,12 @@ int main(int argc, char *argv[])
     res = compute_k_cores(g, 3);
     gettimeofday(&end, NULL);
     bool error = false;
-    // #pragma omp parallel for default(shared) private(i) reduction(| \
-//                                                               : error)
+    #pragma omp parallel for default(shared) private(i) reduction(| \
+                                                              : error)
     for (i = 0; i < seq_res->adj_list.size(); i++)
     {
       if (seq_res->adj_list[i].size() != res->adj_list[i].size())
       {
-        // cout << i << endl;
         error = true;
       }
     }
@@ -399,8 +388,10 @@ int main(int argc, char *argv[])
     {
       cout << "Error! Incorrect results" << endl;
       // break;
-    } else {
-      cout<< "Success!"<<endl;
+    }
+    else
+    {
+      cout << "Success!" << endl;
     }
     time_taken = (end.tv_sec - start.tv_sec) * 1e6;
     time_taken = (time_taken + (end.tv_usec -
