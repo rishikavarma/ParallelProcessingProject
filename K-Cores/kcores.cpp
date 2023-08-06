@@ -89,11 +89,7 @@ Graph *compute_k_cores(Graph &g, int k)
 {
   int *visited = new int[g.v];
   int i;
-#pragma omp parallel for default(shared) private(i)
-  for (i = 0; i < g.v; i++)
-  {
-    visited[i] = 0;
-  }
+  memset(visited, 0, sizeof *visited * g.v);
 #pragma omp parallel for default(shared) private(i)
   for (i = 0; i < g.v; i++)
   {
@@ -323,6 +319,7 @@ void smallTestCase4()
 int main(int argc, char *argv[])
 {
   int v = atoi(argv[2]);
+  int k = atoi(argv[3]);
   string str;
   cout << argv[1] << endl;
   ifstream graphfile(argv[1]);
@@ -334,12 +331,13 @@ int main(int argc, char *argv[])
   Graph *res;
   while (getline(graphfile, str))
   {
+    // Modify based on file format and graph type.
     stringstream ss(str);
     string word;
     int source, destination;
-    getline(ss, word, ',');
+    getline(ss, word, ' ');
     source = stoi(word);
-    getline(ss, word, ',');
+    getline(ss, word, '\n');
     destination = stoi(word);
     if (idToIndex[source].val == -1)
     {
@@ -371,16 +369,15 @@ int main(int argc, char *argv[])
   struct timeval start, end;
   double time_taken = 0;
   cout << g.e << endl;
-  seq_res = seq_KCores(g, 3);
+  seq_res = seq_KCores(g, k);
   for (num = 1; num <= 20; num = num * 2)
   {
     omp_set_num_threads(num);
     gettimeofday(&start, NULL);
-    res = compute_k_cores(g, 3);
+    res = compute_k_cores(g, k);
     gettimeofday(&end, NULL);
     bool error = false;
-#pragma omp parallel for default(shared) private(i) reduction(| \
-                                                              : error)
+#pragma omp parallel for default(shared) private(i) reduction(| : error)
     for (i = 0; i < seq_res->adj_list.size(); i++)
     {
       if (seq_res->adj_list[i].size() != res->adj_list[i].size())
