@@ -30,7 +30,7 @@ struct Graph
     vector<int> height;
     vector<int> new_height;
     vector<vector<Edge>> adj_list;
-    vector<bool> active, discovered;
+    bool *active, *discovered;
 
     Graph(int ve)
     {
@@ -40,8 +40,10 @@ struct Graph
         height.resize(v);
         new_height.resize(v);
         added_excess.resize(v);
-        active.resize(v);
-        discovered.resize(v);
+        active = new bool[v];
+        discovered = new bool[v];
+        memset(active, false, sizeof *active * v);
+        memset(discovered, false, sizeof *discovered * v);
     }
 
     void addEdge(int s, int d, int c)
@@ -150,14 +152,10 @@ void globalRelabel(Graph &g, int t)
             }
         }
     }
-    cout << queue_size << endl;
-        for (int i = 0; i < g.v; i++)
-        {
-            
-                cout << i << ": "<< g.height[i]<<", ";
-            
-        }
-        cout << endl;
+    // for(int i=0;i<g.v;i++){
+    //     cout<<i << ": "<<g.height[i]<<" ,";
+    // }
+    // cout<<endl;
 }
 
 void push(Graph &g, int v, int t)
@@ -174,11 +172,7 @@ void push(Graph &g, int v, int t)
             g.adj_list[g.adj_list[v][j].dest][g.adj_list[v][j].rev_index].flow -= flow;
             if (g.adj_list[v][j].dest != t)
             {
-#pragma omp critical
-                {
-                    cout << g.adj_list[v][j].dest << endl;
-                    g.discovered[g.adj_list[v][j].dest] = true;
-                }
+                g.discovered[g.adj_list[v][j].dest] = true;
             }
 
             if (g.excess_flow[v] == 0)
@@ -220,18 +214,13 @@ int maxflow(Graph &g, int s, int t)
 
     while (g.active_cnt)
     {
-        if (count % 4 == 0)
+        if (count % 10 == 0)
         {
             globalRelabel(g, t);
         }
         count++;
         // #pragma omp parallel
-        // {
-        for (int i = 0; i < g.v; i++)
-        {
-            cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << "    ";
-        }
-        cout << endl;
+        //         {
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < g.v; i++)
         {
@@ -240,11 +229,11 @@ int maxflow(Graph &g, int s, int t)
                 push(g, i, t);
             }
         }
-        for (int i = 0; i < g.v; i++)
-        {
-            cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << "    ";
-        }
-        cout << endl;
+        // for (int i = 0; i < g.v; i++)
+        // {
+        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << ","<<g.height[i]<<"   ";
+        // }
+        // cout << endl;
 
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < g.v; i++)
@@ -266,26 +255,12 @@ int maxflow(Graph &g, int s, int t)
             }
         }
         g.active_cnt = 0;
-        for (int i = 0; i < g.v; i++)
-        {
-            if (g.height[i] < g.v && g.discovered[i])
-            {
-                
-                cout<<i<<endl;
-            }
-            
-        }
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < g.v; i++)
         {
             if (g.height[i] < g.v && g.discovered[i])
             {
-                // #pragma omp critical
-                // {
-                //     cout<<i<<endl;
-                // }
                 g.active[i] = true;
-#pragma omp atomic
                 g.active_cnt++;
             }
             else
@@ -294,6 +269,11 @@ int maxflow(Graph &g, int s, int t)
             }
             g.discovered[i] = false;
         }
+        // for (int i = 0; i < g.v; i++)
+        // {
+        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << ","<<g.height[i]<<"   ";
+        // }
+        // cout << endl;
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < g.v; i++)
         {
@@ -304,8 +284,8 @@ int maxflow(Graph &g, int s, int t)
                 g.added_excess[i] = 0;
             }
         }
-        // }
     }
+    // }
 
     return g.excess_flow[s] + g.added_excess[t];
 }
@@ -407,14 +387,14 @@ void smallTestCase4()
 void prechecks(int num)
 {
     omp_set_num_threads(num);
-    // smallTestCase1();
-    // smallTestCase2();
+    smallTestCase1();
+    smallTestCase2();
     smallTestCase3();
-    // smallTestCase4();
+    smallTestCase4();
 }
 
 int main()
 {
-    prechecks(2);
+    prechecks(8);
     return 0;
 }
