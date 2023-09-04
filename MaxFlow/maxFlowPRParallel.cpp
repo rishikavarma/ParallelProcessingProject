@@ -96,7 +96,7 @@ void preflow(Graph &g, int s)
     g.active_cnt = g.adj_list[s].size();
 }
 
-void globalRelabel(Graph &g, int t)
+void globalRelabel(Graph &g, int s, int t)
 {
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < g.v; i++)
@@ -126,7 +126,7 @@ void globalRelabel(Graph &g, int t)
                 for (int j = 0; j < g.adj_list[i].size(); j++)
                 {
 
-                    if (g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].capacity > 0 && g.height[g.adj_list[i][j].dest] == g.v)
+                    if (g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].capacity - g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].flow > 0 && g.height[g.adj_list[i][j].dest] == g.v && g.adj_list[i][j].dest != s)
                     {
                         int doNotProceed = 0;
 #pragma omp atomic capture
@@ -134,6 +134,11 @@ void globalRelabel(Graph &g, int t)
                         if (doNotProceed == 0)
                         {
                             g.height[g.adj_list[i][j].dest] = g.height[i] + 1;
+// #pragma omp critical
+//                             {
+//                                 cout<<g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].dest<<endl;
+//                                 cout <<i<<" <- "<< g.adj_list[i][j].dest << endl;
+//                             }
                         }
                     }
                 }
@@ -152,6 +157,7 @@ void globalRelabel(Graph &g, int t)
             }
         }
     }
+    // g.height[s] = g.v;
     // for(int i=0;i<g.v;i++){
     //     cout<<i << ": "<<g.height[i]<<" ,";
     // }
@@ -162,7 +168,7 @@ void push(Graph &g, int v, int t)
 {
     for (int j = 0; j < g.adj_list[v].size(); j++)
     {
-        if (g.height[v] == g.height[g.adj_list[v][j].dest] + 1 && g.adj_list[v][j].capacity > 0)
+        if (g.height[v] == g.height[g.adj_list[v][j].dest] + 1 && g.adj_list[v][j].capacity - g.adj_list[v][j].flow > 0)
         {
             int flow = min(g.adj_list[v][j].capacity - g.adj_list[v][j].flow, g.excess_flow[v]);
             g.excess_flow[v] -= flow;
@@ -214,13 +220,16 @@ int maxflow(Graph &g, int s, int t)
 
     while (g.active_cnt)
     {
-        if (count % 10 == 0)
+        if (count % 4 == 0)
         {
-            globalRelabel(g, t);
+            globalRelabel(g, s, t);
         }
         count++;
-        // #pragma omp parallel
-        //         {
+        // for (int i = 0; i < g.v; i++)
+        // {
+        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << "," << g.height[i] << "   ";
+        // }
+        // cout << endl;
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < g.v; i++)
         {
@@ -231,7 +240,7 @@ int maxflow(Graph &g, int s, int t)
         }
         // for (int i = 0; i < g.v; i++)
         // {
-        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << ","<<g.height[i]<<"   ";
+        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << "," << g.height[i] << "   ";
         // }
         // cout << endl;
 
@@ -271,7 +280,7 @@ int maxflow(Graph &g, int s, int t)
         }
         // for (int i = 0; i < g.v; i++)
         // {
-        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << ","<<g.height[i]<<"   ";
+        //     cout << i << ":" << g.added_excess[i] << "," << g.active[i] << "," << g.discovered[i] << "," << g.excess_flow[i] << "," << g.height[i] << "   ";
         // }
         // cout << endl;
 #pragma omp parallel for schedule(static)
@@ -285,9 +294,8 @@ int maxflow(Graph &g, int s, int t)
             }
         }
     }
-    // }
 
-    return g.excess_flow[s] + g.added_excess[t];
+    return g.added_excess[t] + g.excess_flow[t];
 }
 
 void smallTestCase1()
@@ -395,6 +403,7 @@ void prechecks(int num)
 
 int main()
 {
-    prechecks(8);
+    // prechecks(8);
+    
     return 0;
 }
