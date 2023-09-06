@@ -411,8 +411,9 @@ int setThreads(Graph &g, int &s, int &t, int num)
     Graph *gt = new Graph(g.v);
     *gt = g;
     omp_set_num_threads(num);
-    return maxflow(*gt, s, t);
+    int ret = maxflow(*gt, s, t);
     free(gt);
+    return ret;
 }
 
 int main(int argc, char *argv[])
@@ -454,6 +455,8 @@ int main(int argc, char *argv[])
     }
     graphfile.close();
     cout << g.e << endl;
+    s = idToIndex[s].val;
+    t = idToIndex[t].val;
     struct timeval start, end;
     double time_taken = 0;
     int res = setThreads(g, s, t, 1);
