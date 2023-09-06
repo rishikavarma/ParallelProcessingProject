@@ -5,6 +5,11 @@
 
 using namespace std;
 
+struct Index
+{
+    int val = -1;
+};
+
 struct Edge
 {
     int dest, capacity, flow, rev_index;
@@ -134,11 +139,11 @@ void globalRelabel(Graph &g, int s, int t)
                         if (doNotProceed == 0)
                         {
                             g.height[g.adj_list[i][j].dest] = g.height[i] + 1;
-// #pragma omp critical
-//                             {
-//                                 cout<<g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].dest<<endl;
-//                                 cout <<i<<" <- "<< g.adj_list[i][j].dest << endl;
-//                             }
+                            // #pragma omp critical
+                            //                             {
+                            //                                 cout<<g.adj_list[g.adj_list[i][j].dest][g.adj_list[i][j].rev_index].dest<<endl;
+                            //                                 cout <<i<<" <- "<< g.adj_list[i][j].dest << endl;
+                            //                             }
                         }
                     }
                 }
@@ -401,9 +406,84 @@ void prechecks(int num)
     smallTestCase4();
 }
 
-int main()
+int setThreads(Graph &g, int &s, int &t, int num)
+{
+    Graph *gt = new Graph(g.v);
+    *gt = g;
+    omp_set_num_threads(num);
+    return maxflow(*gt, s, t);
+    free(gt);
+}
+
+int main(int argc, char *argv[])
 {
     // prechecks(8);
-    
+    int v = atoi(argv[2]);
+    int s = atoi(argv[3]);
+    int t = atoi(argv[4]);
+    string str;
+    cout << argv[1] << endl;
+    ifstream graphfile(argv[1]);
+    Graph g(v);
+    int num;
+    int i, j, ind = 0;
+    map<int, Index> idToIndex;
+    map<int, Index>::iterator it;
+    while (getline(graphfile, str))
+    {
+        stringstream ss(str);
+        string word;
+        int source, destination, weight;
+        getline(ss, word, ',');
+        source = stoi(word);
+        getline(ss, word, ',');
+        destination = stoi(word);
+        getline(ss, word, ',');
+        weight = abs(stoi(word));
+        if (idToIndex[source].val == -1)
+        {
+            idToIndex[source].val = ind;
+            ind++;
+        }
+        if (idToIndex[destination].val == -1)
+        {
+            idToIndex[destination].val = ind;
+            ind++;
+        }
+        g.addEdge(idToIndex[source].val, idToIndex[destination].val, weight);
+    }
+    graphfile.close();
+    cout << g.e << endl;
+    struct timeval start, end;
+    double time_taken = 0;
+    int res = setThreads(g, s, t, 1);
+    cout << res << endl;
+    for (num = 1; num <= 20; num = num * 2)
+    {
+        Graph *gt = new Graph(v);
+        *gt = g;
+        omp_set_num_threads(num);
+        gettimeofday(&start, NULL);
+        int tres = maxflow(*gt, s, t);
+        gettimeofday(&end, NULL);
+        if (res == tres)
+        {
+            cout << "Success!" << endl;
+        }
+        else
+        {
+            cout << "Error! Incorrect results" << endl;
+            cout << tres << endl;
+        }
+        time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+        time_taken = (time_taken + (end.tv_usec -
+                                    start.tv_usec)) *
+                     1e-6;
+        cout << "Threads: " << num << " Time: " << fixed
+             << time_taken << setprecision(10) << endl;
+        free(gt);
+        if (num == 16)
+            num = 10;
+    }
     return 0;
 }
