@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     string fileName = argv[1];
     int s = atoi(argv[2]);
     int t = atoi(argv[3]);
-    ifstream graphfile(fileName + ".txt");
+    ifstream graphfile(fileName + ".csv");
     ofstream randomWeights(fileName + "_withWeights.txt");
     string str;
     set<int> se;
@@ -21,6 +21,12 @@ int main(int argc, char *argv[])
         source = stoi(word);
         ss >> word;
         destination = stoi(word);
+        // getline(ss, word, ',');
+        // source = stoi(word);
+        // getline(ss, word, ',');
+        // destination = stoi(word);
+        // getline(ss, word, ',');
+        // weight = abs(stoi(word));
         randomWeights << source << "," << destination << "," << weight << "," << endl;
         se.insert(source);
         se.insert(destination);
