@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     string fileName = argv[1];
     int s = atoi(argv[2]);
     int t = atoi(argv[3]);
-    ifstream graphfile(fileName + ".txt");
+    ifstream graphfile(fileName + ".csv");
     ofstream randomWeights(fileName + "_withWeights.txt");
     string str;
     set<int> se;
