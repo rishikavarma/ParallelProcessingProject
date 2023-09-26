@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://snap.stanford.edu/data/ego-Twitter.html
+HostUrl=https://snap.stanford.edu/data/twitter_combined.txt.gz

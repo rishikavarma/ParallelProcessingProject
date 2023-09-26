@@ -110,7 +110,10 @@ void globalRelabel(Graph &g, int s, int t)
     }
     g.height[t] = 0;
     int queue_size = 1, disc_count = 0;
-    int active[g.v] = {0}, discovered[g.v] = {0};
+    int *active = new int[g.v];
+    memset(active, 0, sizeof *active * g.v);
+    int *discovered = new int[g.v];
+    memset(discovered, 0, sizeof *discovered * g.v);
     active[t] = true;
     while (queue_size)
     {
@@ -162,6 +165,8 @@ void globalRelabel(Graph &g, int s, int t)
             }
         }
     }
+    free(active);
+    free(discovered);
     // g.height[s] = g.v;
     // for(int i=0;i<g.v;i++){
     //     cout<<i << ": "<<g.height[i]<<" ,";
@@ -222,7 +227,6 @@ int maxflow(Graph &g, int s, int t)
 {
     int count = 0;
     preflow(g, s);
-
     while (g.active_cnt)
     {
         if (count % 4 == 0)
@@ -411,8 +415,9 @@ int setThreads(Graph &g, int &s, int &t, int num)
     Graph *gt = new Graph(g.v);
     *gt = g;
     omp_set_num_threads(num);
-    return maxflow(*gt, s, t);
+    int ret = maxflow(*gt, s, t);
     free(gt);
+    return ret;
 }
 
 int main(int argc, char *argv[])
@@ -429,8 +434,14 @@ int main(int argc, char *argv[])
     int i, j, ind = 0;
     map<int, Index> idToIndex;
     map<int, Index>::iterator it;
+    int rc = 0;
     while (getline(graphfile, str))
     {
+        rc++;
+        // if (rc % 10000 == 0)
+        // {
+        //     cout << rc << endl;
+        // }
         stringstream ss(str);
         string word;
         int source, destination, weight;
@@ -454,6 +465,8 @@ int main(int argc, char *argv[])
     }
     graphfile.close();
     cout << g.e << endl;
+    s = idToIndex[s].val;
+    t = idToIndex[t].val;
     struct timeval start, end;
     double time_taken = 0;
     int res = setThreads(g, s, t, 1);
